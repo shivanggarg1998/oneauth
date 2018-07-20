@@ -17,11 +17,20 @@ module.exports = new LocalStrategy(async function (username, password, cb) {
 
     Raven.setContext({extra: {file: 'localstrategy'}})
     try{
-        const userLocal = await models.UserLocal.findOne({
+        const re = /^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+        var userLocal;
+        if(re.test(username))
+        {
+        userLocal = await models.UserLocal.findOne({
+            include: [{model: models.User, where: {email: username}}],
+        })
+    }else{
+        userLocal = await models.UserLocal.findOne({
             include: [{model: models.User, where: {username: username}}],
         })
+    }
         if (!userLocal) {
-            return cb(null, false, {message: 'Invalid Username'})
+            return cb(null, false, {message: 'Invalid Username/Email'})
         }
 
         const match = await passutils.compare2hash(password, userLocal.password)
